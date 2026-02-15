@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Memory of Love</title>
+
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+
+<style>
+:root{
+    --primary:#ff4d8d;
+    --soft:#fff5fa;
+    --dark:#1a0b14;
+}
+
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+}
+
+body{
+    height:100vh;
+    background: linear-gradient(-45deg,#ff9ecf,#c084fc,#7dd3fc,#ffd6ec);
+    background-size:400% 400%;
+    animation: gradientMove 15s ease infinite;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    font-family:'Inter', sans-serif;
+    overflow:hidden;
+}
+
+@keyframes gradientMove{
+    0%{background-position:0% 50%;}
+    50%{background-position:100% 50%;}
+    100%{background-position:0% 50%;}
+}
+
+header{
+    text-align:center;
+    margin-bottom:30px;
+}
+
+header h1{
+    font-family:'Playfair Display', serif;
+    font-weight:600;
+    letter-spacing:4px;
+    font-size:32px;
+    color:white;
+}
+
+header p{
+    font-size:14px;
+    color:white;
+    opacity:0.8;
+    margin-top:8px;
+}
+
+/* GAME GRID */
+
+.game{
+    width:420px;
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:14px;
+}
+
+.card{
+    width:95px;
+    height:95px;
+    perspective:1000px;
+}
+
+.inner{
+    width:100%;
+    height:100%;
+    position:relative;
+    transform-style:preserve-3d;
+    transition:transform 0.8s cubic-bezier(.4,.2,.2,1);
+}
+
+.card.flip .inner{
+    transform:rotateY(180deg);
+}
+
+.front,.back{
+    position:absolute;
+    width:100%;
+    height:100%;
+    border-radius:16px;
+    backface-visibility:hidden;
+}
+
+.front{
+    transform:rotateY(180deg);
+    background:white;
+    box-shadow:0 10px 25px rgba(0,0,0,0.1);
+}
+
+.front img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    border-radius:16px;
+}
+
+.back{
+    background:linear-gradient(145deg,#ff4d8d,#ff7eb3);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:26px;
+    color:white;
+    box-shadow:0 8px 20px rgba(255,0,120,0.4);
+}
+
+/* FINAL SCREEN */
+
+#final{
+    position:fixed;
+    inset:0;
+    display:none;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    background:#000;
+    z-index:999;
+}
+
+canvas{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+}
+
+#love{
+    font-family:'Playfair Display', serif;
+    font-size:90px;
+    letter-spacing:6px;
+    background:linear-gradient(45deg,#ffffff,#ff9ecf,#ffffff);
+    -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;
+    text-shadow:0 0 40px rgba(255,255,255,0.6);
+    z-index:2;
+    animation:fadeIn 2s ease forwards;
+}
+
+@keyframes fadeIn{
+    from{opacity:0;transform:translateY(20px);}
+    to{opacity:1;transform:translateY(0);}
+}
+
+.fadeOut{
+    animation:fadeOut 1.2s forwards;
+}
+
+@keyframes fadeOut{
+    to{opacity:0;transform:scale(0.6);}
+}
+
+footer{
+    position:absolute;
+    bottom:15px;
+    font-size:12px;
+    color:white;
+    opacity:0.7;
+}
+
+</style>
+</head>
+
+<body>
+
+<header>
+    <h1>MEMORY OF LOVE</h1>
+    <p>Find all matching pairs</p>
+</header>
+
+<div class="game" id="game"></div>
+
+<div id="final">
+    <canvas id="heartCanvas"></canvas>
+    <div id="love">I LOVE YOU</div>
+</div>
+
+<footer>
+    Designed with love
+</footer>
+
+<script>
+
+/* Images */
+const images=[
+"b1.jpg",
+"b2.jpg",
+"b3.jpg",
+"b4.jpg",
+"b5.jpg",
+"b6.jpg"
+];
+
+let cards=[...images,...images];
+cards.sort(()=>0.5-Math.random());
+
+const game=document.getElementById("game");
+let first=null,second=null,lock=false,matches=0;
+
+cards.forEach(src=>{
+    const card=document.createElement("div");
+    card.className="card";
+    card.innerHTML=`
+        <div class="inner">
+            <div class="front"><img src="${src}"></div>
+            <div class="back">♥</div>
+        </div>
+    `;
+
+    card.addEventListener("click",()=>{
+        if(lock||card.classList.contains("flip")) return;
+        card.classList.add("flip");
+
+        if(!first){
+            first=card;
+        }else{
+            second=card;
+            lock=true;
+
+            if(first.querySelector("img").src===second.querySelector("img").src){
+                matches++;
+                reset();
+                if(matches===images.length){
+                    setTimeout(winEffect,800);
+                }
+            }else{
+                setTimeout(()=>{
+                    first.classList.remove("flip");
+                    second.classList.remove("flip");
+                    reset();
+                },800);
+            }
+        }
+    });
+
+    game.appendChild(card);
+});
+
+function reset(){
+    first=null;
+    second=null;
+    lock=false;
+}
+
+/* WIN EFFECT */
+function winEffect(){
+    document.querySelectorAll(".card").forEach(c=>{
+        c.classList.add("fadeOut");
+    });
+
+    setTimeout(()=>{
+        document.querySelector(".game").style.display="none";
+        document.querySelector("header").style.display="none";
+        document.getElementById("final").style.display="flex";
+        startHeart();
+    },1200);
+}
+
+/* PARTICLE HEART */
+function startHeart(){
+
+    const canvas = document.getElementById("heartCanvas");
+    const ctx = canvas.getContext("2d");
+
+    function resize(){
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+
+    resize();
+    window.addEventListener("resize", resize);
+
+    let particles = [];
+    let total = 1400;
+    let scale = Math.min(canvas.width, canvas.height) / 40;
+    let time = 0;
+
+    for(let i=0;i<total;i++){
+        let t = Math.random() * Math.PI * 2;
+        let x = 16 * Math.pow(Math.sin(t),3);
+        let y = -(13*Math.cos(t)
+                 -5*Math.cos(2*t)
+                 -2*Math.cos(3*t)
+                 -Math.cos(4*t));
+
+        particles.push({
+            tx: x * scale,
+            ty: y * scale,
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            size: Math.random()*2 + 1,
+            speed: Math.random()*0.05 + 0.02
+        });
+    }
+
+    function animate(){
+
+        ctx.fillStyle = "rgba(0,0,0,0.25)";
+        ctx.fillRect(0,0,canvas.width,canvas.height);
+
+        time += 0.02;
+
+        let pulse = 1 + Math.sin(time*2) * 0.05;
+
+        let centerX = canvas.width/2;
+        let centerY = canvas.height/2;
+
+        particles.forEach(p=>{
+
+            p.x += (centerX + p.tx*pulse - p.x) * p.speed;
+            p.y += (centerY + p.ty*pulse - p.y) * p.speed;
+
+            let gradient = ctx.createRadialGradient(
+                p.x, p.y, 0,
+                p.x, p.y, 10
+            );
+
+            gradient.addColorStop(0,"rgba(255,80,150,1)");
+            gradient.addColorStop(0.5,"rgba(255,0,120,0.7)");
+            gradient.addColorStop(1,"rgba(255,0,100,0)");
+
+            ctx.beginPath();
+            ctx.arc(p.x,p.y,p.size,0,Math.PI*2);
+            ctx.fillStyle = gradient;
+            ctx.fill();
+        });
+
+        requestAnimationFrame(animate);
+    }
+
+    animate();
+}
+
+
+</script>
+</body>
+</html>
